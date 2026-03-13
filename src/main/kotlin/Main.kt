@@ -1,5 +1,3 @@
-package org.example
-
 import java.util.Scanner
 
 data class Station(val unload: Int, val load: Int)
@@ -32,25 +30,36 @@ fun parseInput(scanner: Scanner): Railway {
     return Railway(stations, tracks, startStationId)
 }
 
-// State of a rail entering a station (station id and that may enter via this rail)
-data class EntryState(val id: Int, val cargoState: Set<Int>)
+// State of a cargo exiting a station (station id and cargo)
+data class State(val id: Int, val cargo: Int)
 
 fun calcAvailableCargo(railway: Railway) : Map<Int, Set<Int>> {
-    val queue: ArrayDeque<EntryState> = ArrayDeque()
+    val queue: ArrayDeque<State> = ArrayDeque()
+    val visited: MutableSet<State> = mutableSetOf()
     val cargo: MutableMap<Int, Set<Int>> = railway.stations.mapValues { emptySet<Int>() }.toMutableMap()
 
-    queue.add(EntryState(railway.startStationId, emptySet()))
+    val startStation = railway.stations.getValue(railway.startStationId)
+    val firstState = State(railway.startStationId, startStation.load)
+    queue.add(firstState)
+    visited.add(firstState)
 
     while (queue.isNotEmpty()) {
-        val (stationId, cargoState) = queue.removeFirst()
-        val station: Station = railway.stations.getValue(stationId)
-        val newCargo = (cargoState - station.unload) + station.load
+        val (stationId, currentCargo) = queue.removeFirst()
         for (neighbor in railway.tracks.getOrDefault(stationId, listOf())) {
-            if (cargo.getValue(neighbor).containsAll(newCargo)) {
-                continue
+            cargo[neighbor] = cargo.getOrDefault(neighbor, emptySet()) + currentCargo
+            val neighborStation: Station = railway.stations.getValue(neighbor)
+            if (neighborStation.unload != currentCargo) {
+                val nextState = State(neighbor, currentCargo)
+                if (!visited.contains(nextState)) {
+                    queue.add(nextState)
+                    visited.add(nextState)
+                }
             }
-            cargo[neighbor] = cargo.getOrDefault(neighbor, emptySet()) + newCargo
-            queue.add(EntryState(neighbor, newCargo))
+            val newState = State(neighbor, neighborStation.load)
+            if (!visited.contains(newState)) {
+                queue.add(newState)
+                visited.add(newState)
+            }
         }
     }
     return cargo

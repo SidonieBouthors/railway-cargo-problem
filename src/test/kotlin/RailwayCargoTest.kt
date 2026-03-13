@@ -1,6 +1,6 @@
-import org.example.calcAvailableCargo
-import org.example.formatOutput
-import org.example.parseInput
+import calcAvailableCargo
+import formatOutput
+import parseInput
 import org.junit.jupiter.api.Test
 import java.util.Scanner
 import kotlin.test.assertEquals
